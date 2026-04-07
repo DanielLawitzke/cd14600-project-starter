@@ -6,12 +6,18 @@ from transaction.transaction import Transaction
 from transaction.transaction_category import TransactionCategory
 from transaction.transaction_adapter import TransactionAdapter
 from transaction.external_income_transaction import ExternalFreelanceIncome
+from transaction.transaction_command import ApplyTransactionCommand, TransactionHistory
 
 
 def main():
     print("Adding transactions...")
    
-    # TODO: Create balance and add observers
+    # Create balance and add observers
+    balance = Balance()
+    balance.register_observer(PrintObserver())
+    balance.register_observer(LowBalanceAlertObserver(threshold=500))
+
+    history = TransactionHistory()
 
     # Create standard transactions
     transactions = [
@@ -28,7 +34,17 @@ def main():
 
     all_transactions = transactions + [adapted_transaction]
 
-    # TODO: Apply all transactions to balance
+    # apply all transactions via Command Pattern
+    for transaction in all_transactions:
+        cmd = ApplyTransactionCommand(balance, transaction)
+        history.execute(cmd)
+
+    print(balance.summary())
+
+    # demonstrate undo functionality
+    print("\nUndo last transaction...")
+    history.undo_last()
+    print(balance.summary())
 
 if __name__ == "__main__":
     main()
